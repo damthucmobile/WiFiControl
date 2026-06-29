@@ -151,123 +151,168 @@ export default function Dashboard() {
   const isLoading = isDevicesLoading || isRouterInfoLoading || isStatisticsLoading;
 
   return (
-    <div className="min-h-screen bg-background p-4 text-foreground md:p-6">
+    <div className="min-h-screen bg-background p-4 text-foreground md:p-6 lg:p-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+        
+        {/* Header - Hỗ trợ Wrap linh hoạt trên Mobile */}
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">Router overview</p>
-            <h1 className="text-3xl font-semibold">Connected devices</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{ipAddress} · {vendor} · Auto-refresh every 10 seconds</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Router overview</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold mt-0.5">Connected devices</h1>
+            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+              <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-foreground">{ipAddress}</span> · <span className="uppercase font-semibold">{vendor}</span> · Auto-refresh 10s
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => refreshAll()}>Refresh</Button>
-            <Button variant="outline" onClick={() => exportCsv()}>Export CSV</Button>
-            <Button asChild variant="outline">
-              <Link href="/blocked">Blocked list</Link>
+          {/* Nhóm nút thu nhỏ vừa màn hình di động */}
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => refreshAll()}>Refresh</Button>
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => exportCsv()}>Export CSV</Button>
+            <Button asChild variant="outline" size="sm" className="w-full sm:w-auto text-center">
+              <Link href="/blocked" className="justify-center">Blocked list</Link>
             </Button>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader><CardTitle>Connected devices</CardTitle></CardHeader>
-            <CardContent>{isLoading ? '…' : devices.length}</CardContent>
+        {/* Thống kê Tổng quan - Tự động đổi Grid Layout từ 2 sang 4 cột */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Card className="shadow-none">
+            <CardHeader className="p-4 pb-2"><CardTitle className="text-xs sm:text-sm text-muted-foreground font-medium">Connected</CardTitle></CardHeader>
+            <CardContent className="p-4 pt-0 text-xl sm:text-2xl font-bold">{isLoading ? '…' : devices.length}</CardContent>
           </Card>
-          <Card>
-            <CardHeader><CardTitle>Blocked devices</CardTitle></CardHeader>
-            <CardContent>{isBlockedLoading ? '…' : blocked.length}</CardContent>
+          <Card className="shadow-none">
+            <CardHeader className="p-4 pb-2"><CardTitle className="text-xs sm:text-sm text-muted-foreground font-medium">Blocked</CardTitle></CardHeader>
+            <CardContent className="p-4 pt-0 text-xl sm:text-2xl font-bold">{isBlockedLoading ? '…' : blocked.length}</CardContent>
           </Card>
-          <Card>
-            <CardHeader><CardTitle>Average RSSI</CardTitle></CardHeader>
-            <CardContent>{statistics?.averageRssi ?? '—'} dBm</CardContent>
+          <Card className="shadow-none">
+            <CardHeader className="p-4 pb-2"><CardTitle className="text-xs sm:text-sm text-muted-foreground font-medium">Avg RSSI</CardTitle></CardHeader>
+            <CardContent className="p-4 pt-0 text-xl sm:text-2xl font-bold">{statistics?.averageRssi ?? '—'} dBm</CardContent>
           </Card>
-          <Card>
-            <CardHeader><CardTitle>Uptime</CardTitle></CardHeader>
-            <CardContent>{routerInfo ? `${Math.round(routerInfo.uptime / 3600)}h` : '—'}</CardContent>
+          <Card className="shadow-none">
+            <CardHeader className="p-4 pb-2"><CardTitle className="text-xs sm:text-sm text-muted-foreground font-medium">Uptime</CardTitle></CardHeader>
+            <CardContent className="p-4 pt-0 text-xl sm:text-2xl font-bold">{routerInfo ? `${Math.round(routerInfo.uptime / 3600)}h` : '—'}</CardContent>
           </Card>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
-          <div className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+        {/* Nội dung chính Layout: Grid linh hoạt 1, 2 và 3 cột tùy kích thước */}
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
+          
+          {/* Vùng Bảng thiết bị */}
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm h-fit">
+            
+            {/* Thanh công cụ tìm kiếm và lọc */}
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={handleBlockSelected}>Block selected</Button>
-                <Button size="sm" variant="outline" onClick={handleDisconnectSelected}>Disconnect selected</Button>
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <Button size="sm" className="flex-1 md:flex-none text-xs sm:text-sm" onClick={handleBlockSelected}>Block selected</Button>
+                <Button size="sm" variant="outline" className="flex-1 md:flex-none text-xs sm:text-sm" onClick={handleDisconnectSelected}>Disconnect</Button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by hostname, MAC, IP or vendor" className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-                <select value={sortBy} onChange={(event) => setSortBy(event.target.value as 'connectedTime' | 'hostname' | 'signalStrength' | 'ipAddress')} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                  <option value="connectedTime">Sort by connection time</option>
-                  <option value="hostname">Sort by hostname</option>
-                  <option value="signalStrength">Sort by signal</option>
-                  <option value="ipAddress">Sort by IP</option>
+              <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <input 
+                  value={search} 
+                  onChange={(event) => setSearch(event.target.value)} 
+                  placeholder="Search by IP, MAC, hostname..." 
+                  className="rounded-lg border border-input bg-background px-3 py-1.5 text-xs sm:text-sm flex-1 md:w-64 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" 
+                />
+                <select 
+                  value={sortBy} 
+                  onChange={(event) => setSortBy(event.target.value as any)} 
+                  className="rounded-lg border border-input bg-background px-3 py-1.5 text-xs sm:text-sm cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="connectedTime">Sort: Connection Time</option>
+                  <option value="hostname">Sort: Hostname</option>
+                  <option value="signalStrength">Sort: Signal Strength</option>
+                  <option value="ipAddress">Sort: IP Address</option>
                 </select>
               </div>
             </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead></TableHead>
-                  <TableHead>Hostname</TableHead>
-                  <TableHead>MAC</TableHead>
-                  <TableHead>IP</TableHead>
-                  <TableHead>Band</TableHead>
-                  <TableHead>Signal</TableHead>
-                  <TableHead>Connection time</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Loading router telemetry…</TableCell></TableRow>
-                ) : filteredDevices.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">No devices matched your search.</TableCell></TableRow>
-                ) : filteredDevices.map((device) => (
-                  <TableRow key={device.id} onClick={() => setSelectedDevice(device)} className="cursor-pointer">
-                    <TableCell onClick={(event) => event.stopPropagation()}>
-                      <input type="checkbox" checked={selectedMacs.includes(device.macAddress)} onChange={() => toggleSelection(device.macAddress)} />
-                    </TableCell>
-                    <TableCell className="font-medium">{device.hostname}</TableCell>
-                    <TableCell className="font-mono text-xs">{device.macAddress}</TableCell>
-                    <TableCell>{device.ipAddress}</TableCell>
-                    <TableCell>{device.connectionType}</TableCell>
-                    <TableCell>{device.signalStrength} dBm</TableCell>
-                    <TableCell>{Math.round(device.connectedTime / 60)} min</TableCell>
+            {/* Bảng thiết bị có hỗ trợ cuộn trục X trên Mobile */}
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="w-[40px] pl-4"></TableHead>
+                    <TableHead className="text-xs sm:text-sm">Device / Hostname</TableHead>
+                    <TableHead className="hidden sm:table-cell text-xs sm:text-sm">MAC Address</TableHead>
+                    <TableHead className="text-xs sm:text-sm">IP Address</TableHead>
+                    <TableHead className="hidden md:table-cell text-xs sm:text-sm">Band</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Signal</TableHead>
+                    <TableHead className="hidden lg:table-cell text-xs sm:text-sm">Active</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={7} className="py-8 text-center text-xs sm:text-sm text-muted-foreground">Loading router telemetry…</TableCell></TableRow>
+                  ) : filteredDevices.length === 0 ? (
+                    <TableRow><TableCell colSpan={7} className="py-8 text-center text-xs sm:text-sm text-muted-foreground">No devices matched your search.</TableCell></TableRow>
+                  ) : filteredDevices.map((device) => (
+                    <TableRow 
+                      key={device.id} 
+                      onClick={() => setSelectedDevice(device)} 
+                      className={`cursor-pointer transition-colors ${selectedDevice?.macAddress === device.macAddress ? 'bg-muted/70' : 'hover:bg-muted/30'}`}
+                    >
+                      <TableCell onClick={(event) => event.stopPropagation()} className="pl-4">
+                        <input 
+                          type="checkbox" 
+                          className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                          checked={selectedMacs.includes(device.macAddress)} 
+                          onChange={() => toggleSelection(device.macAddress)} 
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium max-w-[120px] sm:max-w-none truncate text-xs sm:text-sm">
+                        <div>{device.hostname || 'Unknown Device'}</div>
+                        {/* Chi tiết phụ hiển thị thêm trên màn hình nhỏ */}
+                        <div className="sm:hidden text-[10px] font-mono text-muted-foreground mt-0.5">{device.macAddress}</div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell font-mono text-xs">{device.macAddress}</TableCell>
+                      <TableCell className="font-mono text-xs sm:text-sm">{device.ipAddress}</TableCell>
+                      <TableCell className="hidden md:table-cell text-xs sm:text-sm">{device.connectionType}</TableCell>
+                      <TableCell className="text-xs sm:text-sm font-medium">
+                        <span className={device.signalStrength > -60 ? 'text-green-500' : device.signalStrength > -75 ? 'text-yellow-500' : 'text-red-500'}>
+                          {device.signalStrength} dBm
+                        </span>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{Math.round(device.connectedTime / 60)} min</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <Card>
-              <CardHeader><CardTitle>Router details</CardTitle></CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p><span className="font-medium text-foreground">Model:</span> {routerInfo?.model || '—'}</p>
-                <p><span className="font-medium text-foreground">Firmware:</span> {routerInfo?.firmwareVersion || '—'}</p>
-                <p><span className="font-medium text-foreground">WAN IP:</span> {routerInfo?.wanIp || '—'}</p>
-                <p><span className="font-medium text-foreground">LAN IP:</span> {routerInfo?.lanIp || '—'}</p>
+          {/* Vùng chi tiết bên phải - Sắp xếp 2 hàng dọc trên PC, 2 cột ngang trên Tablet */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-1">
+            <Card className="shadow-none h-full xl:h-auto">
+              <CardHeader className="p-4 sm:p-6"><CardTitle className="text-base sm:text-lg">Router details</CardTitle></CardHeader>
+              <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-2.5 text-xs sm:text-sm text-muted-foreground">
+                <div className="flex justify-between border-b border-border/50 pb-1.5"><span className="font-medium text-foreground">Model</span> <span>{routerInfo?.model || '—'}</span></div>
+                <div className="flex justify-between border-b border-border/50 pb-1.5"><span className="font-medium text-foreground">Firmware</span> <span className="font-mono text-xs">{routerInfo?.firmwareVersion || '—'}</span></div>
+                <div className="flex justify-between border-b border-border/50 pb-1.5"><span className="font-medium text-foreground">WAN IP</span> <span className="font-mono">{routerInfo?.wanIp || '—'}</span></div>
+                <div className="flex justify-between"><span className="font-medium text-foreground">LAN IP</span> <span className="font-mono">{routerInfo?.lanIp || '—'}</span></div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader><CardTitle>Device details</CardTitle></CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <Card className="shadow-none h-full xl:h-auto">
+              <CardHeader className="p-4 sm:p-6"><CardTitle className="text-base sm:text-lg">Device details</CardTitle></CardHeader>
+              <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 text-xs sm:text-sm text-muted-foreground">
                 {selectedDevice ? (
-                  <>
-                    <p><span className="font-medium text-foreground">Hostname:</span> {selectedDevice.hostname}</p>
-                    <p><span className="font-medium text-foreground">MAC:</span> {selectedDevice.macAddress}</p>
-                    <p><span className="font-medium text-foreground">Vendor:</span> {selectedDevice.vendor}</p>
-                    <p><span className="font-medium text-foreground">Signal:</span> {selectedDevice.signalStrength} dBm</p>
-                    <p><span className="font-medium text-foreground">Upload speed:</span> {selectedDevice.uploadSpeed}</p>
-                    <p><span className="font-medium text-foreground">Download speed:</span> {selectedDevice.downloadSpeed}</p>
-                  </>
+                  <div className="space-y-2.5">
+                    <div className="flex justify-between border-b border-border/50 pb-1.5"><span className="font-medium text-foreground">Hostname</span> <span className="text-foreground font-medium max-w-[150px] truncate">{selectedDevice.hostname}</span></div>
+                    <div className="flex justify-between border-b border-border/50 pb-1.5"><span className="font-medium text-foreground">MAC</span> <span className="font-mono text-xs">{selectedDevice.macAddress}</span></div>
+                    <div className="flex justify-between border-b border-border/50 pb-1.5"><span className="font-medium text-foreground">Vendor</span> <span className="uppercase">{selectedDevice.vendor}</span></div>
+                    <div className="flex justify-between border-b border-border/50 pb-1.5"><span className="font-medium text-foreground">Signal</span> <span>{selectedDevice.signalStrength} dBm</span></div>
+                    <div className="flex justify-between border-b border-border/50 pb-1.5"><span className="font-medium text-foreground">Upload speed</span> <span className="font-mono text-green-500">{selectedDevice.uploadSpeed}</span></div>
+                    <div className="flex justify-between"><span className="font-medium text-foreground">Download speed</span> <span className="font-mono text-blue-500">{selectedDevice.downloadSpeed}</span></div>
+                  </div>
                 ) : (
-                  <p>Select a device to inspect its details.</p>
+                  <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground/80 border border-dashed border-border rounded-xl">
+                    <p>Select a device from the list</p>
+                    <p className="text-[11px] mt-0.5">to inspect detailed telemetry metrics</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
           </div>
+
         </div>
       </div>
     </div>
