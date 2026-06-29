@@ -1,20 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdapter } from '@/router/core/adapter.registry';
-import { RouterVendor } from '@/router/types';
+import { z } from 'zod';
+import { fetchConnectedDevices } from '@/router/services/router-service';
+
+const querySchema = z.object({
+  token: z.string().min(1),
+  vendor: z.enum(['tplink', 'asus', 'openwrt', 'mikrotik', 'unifi', 'huawei', 'zte', 'generic']),
+  ipAddress: z.string().min(1),
+});
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const token = searchParams.get('token');
-  const ipAddress = searchParams.get('ipAddress');
-  const vendor = searchParams.get('vendor') as RouterVendor;
+  const parsed = querySchema.safeParse({
+    token: searchParams.get('token'),
+    vendor: searchParams.get('vendor'),
+    ipAddress: searchParams.get('ipAddress'),
+  });
 
-  if (!token || !ipAddress || !vendor) return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 });
+  }
 
   try {
-    const adapter = getAdapter(vendor);
-    const devices = await adapter.getConnectedDevices(token, ipAddress);
+    const devices = await fetchConnectedDevices(parsed.data);
     return NextResponse.json(devices);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Unable to fetch connected devices' }, { status: 500 });
   }
 }
