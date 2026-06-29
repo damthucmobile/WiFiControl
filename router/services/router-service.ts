@@ -58,3 +58,8 @@ export async function unblockDevice(session: RouterSessionContext, macAddress: s
   const adapter = getAdapter(session.vendor);
   return adapter.unblockMac(session.token, session.ipAddress, macAddress);
 }
+
+export async function disconnectDevice(session: RouterSessionContext, macAddress: string, reason?: string): Promise<boolean> {
+  const adapter = getAdapter(session.vendor);
+  return adapter.disconnectDevice(session.token, session.ipAddress, macAddress, reason);
+}

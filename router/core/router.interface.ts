@@ -15,5 +15,6 @@ export interface RouterAdapter {
   getBlockedMacs(token: string, ipAddress: string): Promise<BlockedMac[]>;
   blockMac(token: string, ipAddress: string, macAddress: string, reason?: string): Promise<boolean>;
   unblockMac(token: string, ipAddress: string, macAddress: string): Promise<boolean>;
+  disconnectDevice(token: string, ipAddress: string, macAddress: string, reason?: string): Promise<boolean>;
   getStatistics(token: string, ipAddress: string): Promise<RouterStatistics>;
 }

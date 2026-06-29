@@ -36,9 +36,10 @@ export default function BlockedPage() {
     mutationFn: async (macAddress: string) => {
       await axios.post('/api/unblock', { token, vendor, ipAddress, macAddress });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Device removed from the block list');
-      queryClient.invalidateQueries({ queryKey: ['blocked'] });
+      await queryClient.invalidateQueries({ queryKey: ['blocked'] });
+      await queryClient.invalidateQueries({ queryKey: ['router-info'] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Unable to unblock this device');

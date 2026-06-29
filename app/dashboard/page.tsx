@@ -101,15 +101,30 @@ export default function Dashboard() {
       await Promise.all(selectedMacs.map((macAddress) => axios.post('/api/block', { token, vendor, ipAddress, macAddress, reason: 'Admin requested block' })));
       toast.success(`Blocked ${selectedMacs.length} device(s)`);
       setSelectedMacs([]);
-      queryClient.invalidateQueries({ queryKey: ['devices'] });
-      queryClient.invalidateQueries({ queryKey: ['blocked'] });
+      await queryClient.invalidateQueries({ queryKey: ['devices'] });
+      await queryClient.invalidateQueries({ queryKey: ['blocked'] });
+      await queryClient.invalidateQueries({ queryKey: ['router-info'] });
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Unable to block the selected device(s)');
     }
   };
 
-  const handleDisconnectSelected = () => {
-    toast.message('Disconnect action is not supported for this adapter and has been reported as unavailable.');
+  const handleDisconnectSelected = async () => {
+    if (selectedMacs.length === 0) {
+      toast.error('Choose at least one device first');
+      return;
+    }
+
+    try {
+      await Promise.all(selectedMacs.map((macAddress) => axios.post('/api/disconnect', { token, vendor, ipAddress, macAddress, reason: 'Admin requested disconnect' })));
+      toast.success(`Disconnected ${selectedMacs.length} device(s)`);
+      setSelectedMacs([]);
+      await queryClient.invalidateQueries({ queryKey: ['devices'] });
+      await queryClient.invalidateQueries({ queryKey: ['router-info'] });
+      await queryClient.invalidateQueries({ queryKey: ['router-statistics'] });
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Unable to disconnect the selected device(s)');
+    }
   };
 
   const exportCsv = () => {

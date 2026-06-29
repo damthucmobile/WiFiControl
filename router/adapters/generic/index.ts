@@ -5,6 +5,7 @@ import crypto from 'crypto';
 
 export class GenericHttpAdapter implements RouterAdapter {
   private blockedMacs: BlockedMac[] = [];
+  private disconnectedMacs = new Set<string>();
 
   private async request(ipAddress: string, path: string, init: { method?: string; headers?: Record<string, string>; body?: string; rejectUnauthorized?: boolean } = {}) {
     const { method = 'GET', headers = {}, body, rejectUnauthorized = false } = init;
@@ -139,18 +140,20 @@ export class GenericHttpAdapter implements RouterAdapter {
   async getConnectedDevices(token: string, ipAddress: string): Promise<ConnectedDevice[]> {
     const xml = await this.getSessionContext(token, ipAddress);
     const instances = this.parseXmlInstances(xml);
-    return instances.map((entry, index) => ({
-      id: entry._LuQUID_MACAddress || `${index}`,
-      hostname: entry._LuQUID_HostName || `Device-${index + 1}`,
-      vendor: 'Unknown',
-      macAddress: entry._LuQUID_MACAddress || '',
-      ipAddress: entry._LuQUID_IPAddress || '',
-      connectionType: 'LAN',
-      signalStrength: -60,
-      connectedTime: 0,
-      uploadSpeed: 0,
-      downloadSpeed: 0,
-    }));
+    return instances
+      .filter((entry) => !this.disconnectedMacs.has((entry._LuQUID_MACAddress || '').toUpperCase()))
+      .map((entry, index) => ({
+        id: entry._LuQUID_MACAddress || `${index}`,
+        hostname: entry._LuQUID_HostName || `Device-${index + 1}`,
+        vendor: 'Unknown',
+        macAddress: entry._LuQUID_MACAddress || '',
+        ipAddress: entry._LuQUID_IPAddress || '',
+        connectionType: 'LAN',
+        signalStrength: -60,
+        connectedTime: 0,
+        uploadSpeed: 0,
+        downloadSpeed: 0,
+      }));
   }
 
   async getBlockedMacs(token: string, ipAddress: string): Promise<BlockedMac[]> {
@@ -176,6 +179,13 @@ export class GenericHttpAdapter implements RouterAdapter {
     if (!macAddress) return false;
     const normalizedMac = macAddress.toUpperCase();
     this.blockedMacs = this.blockedMacs.filter((entry) => entry.macAddress.toUpperCase() !== normalizedMac);
+    return true;
+  }
+
+  async disconnectDevice(token: string, ipAddress: string, macAddress: string, reason?: string): Promise<boolean> {
+    if (!macAddress) return false;
+    const normalizedMac = macAddress.toUpperCase();
+    this.disconnectedMacs.add(normalizedMac);
     return true;
   }
 

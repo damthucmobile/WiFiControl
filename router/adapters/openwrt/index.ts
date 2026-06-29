@@ -4,6 +4,7 @@ import axios from 'axios';
 
 export class OpenWrtAdapter implements RouterAdapter {
   private blockedMacs: BlockedMac[] = [];
+  private disconnectedMacs = new Set<string>();
 
   private getClient(ipAddress: string, token?: string) {
     return axios.create({
@@ -127,13 +128,17 @@ export class OpenWrtAdapter implements RouterAdapter {
                     : null;
 
         if (Array.isArray(list)) {
-          return list.map((entry, index) => this.normalizeDevice(entry, index));
+          return list
+            .filter((entry) => !this.disconnectedMacs.has(String(entry?.mac || entry?.macAddress || entry?.MAC || '').toUpperCase()))
+            .map((entry, index) => this.normalizeDevice(entry, index));
         }
 
         if (raw && typeof raw === 'object') {
           const nested = Object.values(raw).find((value) => Array.isArray(value));
           if (Array.isArray(nested)) {
-            return nested.map((entry, index) => this.normalizeDevice(entry, index));
+            return nested
+              .filter((entry) => !this.disconnectedMacs.has(String((entry as any)?.mac || (entry as any)?.macAddress || (entry as any)?.MAC || '').toUpperCase()))
+              .map((entry, index) => this.normalizeDevice(entry, index));
           }
         }
       } catch {
@@ -170,6 +175,12 @@ export class OpenWrtAdapter implements RouterAdapter {
 
     const normalizedMac = macAddress.toUpperCase();
     this.blockedMacs = this.blockedMacs.filter((entry) => entry.macAddress.toUpperCase() !== normalizedMac);
+    return true;
+  }
+
+  async disconnectDevice(token: string, ipAddress: string, macAddress: string, reason?: string): Promise<boolean> {
+    if (!macAddress) return false;
+    this.disconnectedMacs.add(macAddress.toUpperCase());
     return true;
   }
 
