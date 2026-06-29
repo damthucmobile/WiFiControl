@@ -1,65 +1,108 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useRouter } from 'next/navigation';
+import { useMutation } from '@tanstack/react-query';
+import axios from 'axios';
+import { useRouterStore } from '@/store/use-router-store';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+const ipv4Regex = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
+
+// Định nghĩa schema với các enum chuẩn
+const schema = z.object({
+  ipAddress: z.string().regex(ipv4Regex, { message: "Provide a valid IPv4 Target Address" }),
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Access secret missing"),
+  vendor: z.enum(['tplink', 'asus', 'openwrt', 'mikrotik', 'unifi', 'huawei', 'zte', 'viettel', 'generic']),
+});
+
+export default function LoginPage() {
+  const router = useRouter();
+  const setSession = useRouterStore((state: any) => state.setSession);
+
+  // Khai báo react-hook-form liên kết trực tiếp bằng register
+  const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { 
+      vendor: 'generic',
+      ipAddress: '',
+      username: '',
+      password: ''
+    }
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (values: z.infer<typeof schema>) => {
+      const res = await axios.post('/api/login', values);
+      return { token: res.data.token, values };
+    },
+    onSuccess: ({ token, values }) => {
+      setSession(token, values.vendor, values.ipAddress);
+      toast.success("Router handshake successful!");
+      router.push('/dashboard');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || "Connection timed out");
+    }
+  });
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="flex h-screen w-screen items-center justify-center bg-zinc-950 text-white">
+      <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="w-full max-w-md p-8 bg-zinc-900 border border-zinc-800 rounded-xl space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Access Router Control Plane</h1>
+        
+        {/* Phần Select HTML nguyên bản đã được sửa lỗi */}
+        <div className="space-y-2">
+          <label className="text-xs uppercase font-semibold text-zinc-400">Router Core Driver</label>
+          <div className="relative">
+            <select
+              {...register('vendor')}
+              className="w-full p-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-blue-500"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <option value="generic" className="bg-zinc-900">Generic Management Bridge</option>
+              <option value="viettel" className="bg-zinc-900">Viettel Telecom Gateway</option> {/* Thêm dòng này */}
+              <option value="tplink" className="bg-zinc-900">TP-Link Smart System</option>
+              <option value="asus" className="bg-zinc-900">ASUSWRT Engine</option>
+              <option value="openwrt" className="bg-zinc-900">OpenWrt LuCI Framework</option>
+              <option value="mikrotik" className="bg-zinc-900">MikroTik RouterOS</option>
+              <option value="unifi" className="bg-zinc-900">UniFi Controller</option>
+              <option value="huawei" className="bg-zinc-900">Huawei Enterprise</option>
+              <option value="zte" className="bg-zinc-900">ZTE Home Gateway</option>
+            </select>
+            
+            {/* Mũi tên icon nhỏ bên góc phải */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+              </svg>
+            </div>
+          </div>
+          {errors.vendor && <p className="text-red-400 text-xs">{errors.vendor.message}</p>}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="space-y-2">
+          <input {...register('ipAddress')} placeholder="Gateway Host Address (e.g. 192.168.1.1)" className="w-full p-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+          {errors.ipAddress && <p className="text-red-400 text-xs">{errors.ipAddress.message}</p>}
         </div>
-      </main>
+
+        <div className="space-y-2">
+          <input {...register('username')} placeholder="Username" className="w-full p-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+          {errors.username && <p className="text-red-400 text-xs">{errors.username.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <input type="password" {...register('password')} placeholder="Password" className="w-full p-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white" />
+          {errors.password && <p className="text-red-400 text-xs">{errors.password.message}</p>}
+        </div>
+
+        <Button type="submit" disabled={mutation.isPending} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium">
+          {mutation.isPending ? "Configuring Pipeline..." : "Establish Pipeline"}
+        </Button>
+      </form>
     </div>
   );
 }
