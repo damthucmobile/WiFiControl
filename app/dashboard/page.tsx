@@ -225,6 +225,7 @@ export default function Dashboard() {
               </div>
             </div>
 
+
             {/* Bảng thiết bị có hỗ trợ cuộn trục X trên Mobile */}
             <div className="overflow-x-auto rounded-lg border border-border">
               <Table>
